@@ -85,7 +85,10 @@ class Subst a where
 
 instance Subst Expression where
   subst (Var (Proj _ _)) _ _ = error "Ignore arrays for this project"
-  subst _ _ _ = undefined
+  subst (Var (Name n)) x e' = if n == x then e' else (Var (Name n))
+  subst (Val v) x e' = (Val v)
+  subst (Op1 u e) x e' = (Op1 u (subst e x e'))
+  subst (Op2 e1 b e2) x e' = (Op2 (subst e1 x e') b (subst e2 x e'))
 
 -- | As an example, consider the loop invariant of Square:
 --
@@ -120,7 +123,7 @@ test_substExp = TestList [ "exp-subst" ~: subst wInv "y" wYPlus1 ~?= wInvSubstYY
 --   simply a matter of invoking substitution for expressions.
 
 instance Subst Predicate where
-  subst = undefined
+  subst (Predicate e) x e' = Predicate $ subst e x e'
 
 test_substPred :: Test
 test_substPred = TestList [ "pred-subst" ~: subst (Predicate wInv) "y" wYPlus1 ~?= Predicate wInvSubstYY1 ]

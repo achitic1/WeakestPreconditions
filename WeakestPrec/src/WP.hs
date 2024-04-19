@@ -309,8 +309,11 @@ vc :: Method -> [Predicate]
 vc (Method _ _ _ specs (Block ss)) =
   let e = ensures specs
       r = requires specs
+      (Predicate wpB) = wp (Block ss) (Predicate e)
+      bodyVC = Predicate $ Op2 r Implies wpB
+      vcsBlock = vcBlock (Predicate e) (Block ss) 
   in
-  undefined
+    bodyVC : vcsBlock
 
 -- | As a complete end-to-end test, the verification conditions for the whole of
 --   the Square method is the list of the following three expressions (in order):

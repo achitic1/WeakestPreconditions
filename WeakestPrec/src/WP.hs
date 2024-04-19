@@ -194,14 +194,21 @@ class WP a where
 instance WP Statement where
   wp (Assert _) p = error "Ignore assert for this project"
   wp (Assign (Proj _ _) _) p = error "Ignore arrays for this project"
-  wp _ _ = undefined
+  wp (Assign (Name n) e) p = subst p n e
+  wp (Decl (n,_) e) p = subst p n e
+  wp (If e b1 b2) p = 
+    let (Predicate e1) = wp b1 p in
+    let (Predicate e2) = wp b2 p in
+      Predicate $ (Op2 e Implies (Op2 e1 Conj (Op2 (Op1 Not e) Implies e2)))
+  wp (While p1 e b) p2 = p1
+  wp Empty p = p
 
 -- | You will also need to implement weakest preconditions for blocks
 --   of statements, by repeatedly getting the weakest precondition
 --   starting from the end.
 --   HINT: folds are your friend.
 instance WP Block where
-  wp _ _ = undefined
+  wp (Block bs) p = foldr (\s p -> (wp s p)) p bs
 
 {- | Verification conditions |
    ---------------------------

@@ -199,8 +199,8 @@ instance WP Statement where
   wp (If e b1 b2) p = 
     let (Predicate e1) = wp b1 p in
     let (Predicate e2) = wp b2 p in
-      Predicate $ (Op2 e Implies (Op2 e1 Conj (Op2 (Op1 Not e) Implies e2)))
-  wp (While p1 e b) p2 = p1
+      Predicate $ (Op2 e Implies (Op2 e1 Conj (Op2 ((Op1) (Not) (e)) Implies e2)))
+  wp (While (Predicate p1) e b) p2 = Predicate p1
   wp Empty p = p
 
 -- | You will also need to implement weakest preconditions for blocks
@@ -263,12 +263,20 @@ test_vcStmt =
 
 -- | To implement this, first, calculate the latter two for a single (While) statement:
 vcStmt :: Predicate -> Statement -> [Predicate]
-vcStmt (Predicate p) (While (Predicate inv) e b) = undefined
+vcStmt (Predicate p) (While (Predicate inv) e b) = 
+  let (Predicate wpB) = wp b (Predicate inv) in
+  let vc1 = Predicate $ Op2 (Op2 inv Conj e) Implies wpB in 
+  let negGuard = Op1 Not e in 
+  let vc2 = Predicate $ Op2 (Op2 inv Conj negGuard) Implies p in
+    [vc1, vc2]
 vcStmt _ _ = []
 
 -- | Then, calculate the while loop verification conditions for blocks.
 vcBlock :: Predicate -> Block -> [Predicate]
-vcBlock = undefined
+vcBlock p (Block stmts) = 
+  let (_, vcs) = foldr (\s (p', ps') -> ((wp s p'), (vcStmt p' s) ++ ps')) (p, []) stmts in
+    vcs
+
 
 {- | Lifting to Methods |
    ----------------------
